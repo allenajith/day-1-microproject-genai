@@ -1,0 +1,31 @@
+import gradio as gr
+defaultsystemprompt = '''You are a chatbot that properly answers any question that is put forward by the sender.'''
+def respond(message, history, SYSTEM_PROMPT, temperature):
+  activeprompt = SYSTEM_PROMPT if SYSTEM_PROMPT.strip() else defaultsystemprompt
+  messages = [{"role":"system","content":activeprompt}]
+  for turn in history:
+    messages.append({"role": turn["role"],"content":turn["content"]})
+  messages.append({"role":"user","content":message})
+  stream = client.chat.completions.create(
+    model="llama-3.1-8b-instant",
+    messages=messages,
+    temperature=temperature, #model's creativity 
+    stream = True,
+  )
+  partial = ""
+  for chunk in stream:
+    partial += chunk.choices[0].delta.content or ""
+    yield partial
+additional_inputs = [gr.Textbox(
+        value=defaultsystemprompt, 
+        label="give the system prompt here", 
+        lines=1
+    ),
+    gr.Slider(
+        minimum=0.0, 
+        maximum=2.0, 
+        value=0.0, 
+        step=0.1, 
+        label="temp slider")]
+demo = gr.ChatInterface(fn=respond, type="messages", title = "title",additional_inputs=additional_inputs)
+demo.launch(debug=True)
